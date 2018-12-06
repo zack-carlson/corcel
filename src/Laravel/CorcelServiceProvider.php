@@ -8,6 +8,8 @@ use Corcel\Laravel\Auth\AuthUserProvider;
 use Corcel\Laravel\Observers\UserObserver;
 use Corcel\Model\User;
 use Illuminate\Support\ServiceProvider;
+use Thunder\Shortcode\Parser\RegularParser;
+use Thunder\Shortcode\ShortcodeFacade;
 
 /**
  * Class CorcelServiceProvider
@@ -51,15 +53,22 @@ class CorcelServiceProvider extends ServiceProvider
      */
     private function registerAuthProvider()
     {
-        if (Corcel::isLaravel()) {
-            Auth::provider('corcel', function ($app, array $config) {
-                return new AuthUserProvider($config);
-            });
-        }
+        Auth::provider('corcel', function ($app, array $config) {
+            return new AuthUserProvider($config);
+        });
     }
 
     private function registerObservers(): void
     {
+
         User::observe(UserObserver::class);
+
+        $this->app->bind(ShortcodeFacade::class, function () {
+            return tap(new ShortcodeFacade(), function (ShortcodeFacade $facade) {
+                $parser_class = config('corcel.shortcode_parser', RegularParser::class);
+                $facade->setParser(new $parser_class);
+            });
+        });
+
     }
 }

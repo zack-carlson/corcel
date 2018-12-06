@@ -1,4 +1,4 @@
-![Readme Art](http://i.imgur.com/Kq8iHtg.png)
+<div align="center"><img src="https://i.imgur.com/fHMqwTF.png" width="180"></div>
 
 Corcel
 ======
@@ -9,18 +9,16 @@ Corcel
 [![Packagist](https://img.shields.io/packagist/v/jgrossi/corcel.svg)](https://packagist.org/packages/jgrossi/corcel)
 [![Packagist](https://img.shields.io/packagist/dt/jgrossi/corcel.svg)](https://github.com/jgrossi/corcel/releases)
 [![Test Coverage](https://codeclimate.com/github/corcel/corcel/badges/coverage.svg)](https://codeclimate.com/github/corcel/corcel/coverage)
-
-<a href="https://ko-fi.com/A36513JF" target="_blank">
-  <img height="36" style="border:0px;height:36px;" src="https://az743702.vo.msecnd.net/cdn/kofi4.png?v=0" border="0" alt="Buy Me a Coffee at ko-fi.com" />
-</a>
-
-[![Twitter Follow](https://img.shields.io/twitter/follow/corcelphp.svg?style=social&label=Follow)](http://twitter.com/CorcelPHP)
+[![Maintainability](https://api.codeclimate.com/v1/badges/3dc8135eee70ae7da325/maintainability)](https://codeclimate.com/github/corcel/corcel/maintainability)
 
 Corcel is a collection of classes created to retrieve WordPress database data using a better syntax. It uses the [Eloquent ORM](https://github.com/illuminate/database) developed for the Laravel Framework, but you can use Corcel in any type of PHP project, with any framework, including Laravel.
 
 This way, you can use WordPress as the backend (admin panel), to insert posts, custom types, etc, and you can use whatever you want in the frontend, like Silex, Slim Framework, Laravel, Zend, or even pure PHP (why not?). So, just use Corcel to retrieve data from WordPress.
 
 This make possible to use WordPress as your CMS of choice and using Laravel in the front to create routes, views, controller, and fetch WordPress data using Corcel.
+
+<a href="https://ko-fi.com/A36513JF" target="_blank">Buy me a Coffee</a> | 
+<a href="https://twitter.com/corcelphp" target="_blank">Follow Corcel on Twitter</a>
 
 # Table of Contents
 # <a id="install"></a> Installing Corcel
@@ -258,21 +256,38 @@ $trueOrFalse = $post->saveMeta('foo', 'baz'); // boolean
 
 ### Querying Posts by Custom Fields (Meta)
 
-There are multiples possibilities to query posts by their custom fields (meta). Just use the `hasMeta()` scope under `Post` (actually for all models using the `HasMetaFields` trait) class:
+There are multiples possibilities to query posts by their custom fields (meta) by using scopes on a `Post` (or another other model which uses the `HasMetaFields` trait) class:
 
-```php
-// Using just one custom field
-$post = Post::published()->hasMeta('username', 'jgrossi')->first(); // setting key and value
-$post = Post::published()->hasMeta('username'); // setting just the key
+To check if a meta key exists, use the `hasMeta()` scope:
+```
+// Finds a published post with a meta flag.
+$post = Post::published()->hasMeta('featured_article')->first();
 ```
 
-You can also use the `hasMeta()` scope passing an array as parameter:
+If you want to precisely match a meta-field, you can use the `hasMeta()` scope with a value.
+
+```php
+// Find a published post which matches both meta_key and meta_value.
+$post = Post::published()->hasMeta('username', 'jgrossi')->first();
+```
+
+If you need to match multiple meta-fields, you can also use the `hasMeta()` scope passing an array as parameter:
 
 ```php
 $post = Post::hasMeta(['username' => 'jgrossi'])->first();
 $post = Post::hasMeta(['username' => 'jgrossi', 'url' => 'jgrossi.com'])->first();
 // Or just passing the keys
 $post = Post::hasMeta(['username', 'url'])->first();
+```
+
+If you need to match a case-insensitive string, or match with wildcards, you can use the `hasMetaLike()` scope with a value. This uses an SQL `LIKE` operator, so use '%' as a wildcard operator.
+
+```php
+// Will match: 'J Grossi', 'J GROSSI', and 'j grossi'.
+$post = Post::published()->hasMetaLike('author', 'J GROSSI')->first();
+
+// Using % as a wildcard will match: 'J Grossi', 'J GROSSI', 'j grossi', 'Junior Grossi' etc.
+$post = Post::published()->hasMetaLike('author', 'J%GROSSI')->first();
 ```
 
 ### Fields Aliases
@@ -460,7 +475,25 @@ echo $post->content;
 
 If you are using Laravel, we suggest adding your shortcodes handlers in `App\Providers\AppServiceProvider`, in the `boot` method.
 
-The [*thunderer/shortcode*](https://github.com/thunderer/Shortcode) library is used to parse the shortcodes.  For more information, [click here](https://github.com/thunderer/Shortcode).
+### Shortcode Parsing
+
+Shortcodes are parsed with the [*thunderer/shortcode*](https://github.com/thunderer/Shortcode) library. 
+
+Several different parsers are provided. `RegularParser` is the most technically correct and is provided by default. This is suitable for most cases. However if you encounter some irregularities in your shortcode parsing, you may need to configure Corcel to use the `WordpressParser`, which more faithfully matches WordPress' shortcode regex. To do this, if you are using Laravel, edit the `config/corcel.php` file, and uncomment your preferred parser. Alternatively, you can replace this with a parser of your own.
+
+```php
+'shortcode_parser' => Thunder\Shortcode\Parser\RegularParser::class,
+// 'shortcode_parser' => Thunder\Shortcode\Parser\WordpressParser::class,
+```
+
+If you are not using Laravel, you can to do this in runtime, calling the `setShortcodeParser()` method from any class which uses the `Shortcodes` trait, such as `Post`, for example.
+
+```php
+$post->setShortcodeParser(new WordpressParser());
+echo $post->content; // content parsed with "WordpressParser" class
+```
+
+For more information about the shortcode package, [click here](https://github.com/thunderer/Shortcode).
 
 ## <a id="taxonomies"></a>Taxonomies
 
